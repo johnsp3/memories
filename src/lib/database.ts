@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Database service functions for Firestore operations
 import {
   collection,
@@ -12,13 +14,11 @@ import {
   orderBy,
   limit,
   startAfter,
-  DocumentSnapshot,
   Timestamp,
-  increment,
-  writeBatch
+  increment
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { BlogPost, BlogPostInput, Comment, Rating, SearchFilters } from '@/types/blog';
+import { BlogPost, BlogPostInput } from '@/types/blog';
 
 // Collections
 const POSTS_COLLECTION = 'posts';
@@ -59,8 +59,8 @@ export const createPost = async (postData: BlogPostInput, authorId: string, auth
 export const getPosts = async (options: {
   sortBy?: 'newest' | 'oldest' | 'rating' | 'views';
   limit?: number;
-  startAfter?: any;
-} = {}): Promise<{ posts: BlogPost[]; hasMore: boolean; lastDoc?: any }> => {
+  startAfter?: unknown;
+} = {}): Promise<{ posts: BlogPost[]; hasMore: boolean; lastDoc?: unknown }> => {
   try {
     const { sortBy = 'newest', limit: limitCount = 10, startAfter: lastDoc } = options;
     
@@ -105,9 +105,9 @@ export const getPosts = async (options: {
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate(),
         // Ensure media is properly formatted
-        media: data.media ? data.media.map((item: any) => ({
+        media: data.media ? data.media.map((item: Record<string, unknown>) => ({
           ...item,
-          createdAt: item.createdAt?.toDate ? item.createdAt.toDate() : item.createdAt
+          createdAt: (item.createdAt as { toDate?: () => Date })?.toDate ? (item.createdAt as { toDate: () => Date }).toDate() : item.createdAt
         })) : []
       } as BlogPost;
       
@@ -150,9 +150,9 @@ export const getPost = async (postId: string): Promise<BlogPost | null> => {
       createdAt: data.createdAt.toDate(),
       updatedAt: data.updatedAt.toDate(),
       // Ensure media is properly formatted
-      media: data.media ? data.media.map((item: any) => ({
+      media: data.media ? data.media.map((item: Record<string, unknown>) => ({
         ...item,
-        createdAt: item.createdAt?.toDate ? item.createdAt.toDate() : item.createdAt
+        createdAt: (item.createdAt as { toDate?: () => Date })?.toDate ? (item.createdAt as { toDate: () => Date }).toDate() : item.createdAt
       })) : []
     } as BlogPost;
     
@@ -166,17 +166,19 @@ export const getPost = async (postId: string): Promise<BlogPost | null> => {
 /**
  * Update a blog post
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const updatePost = async (postId: string, updates: Partial<BlogPostInput & { media?: any[]; published?: boolean }>): Promise<void> => {
   try {
     
     const docRef = doc(db, POSTS_COLLECTION, postId);
-    const updateData: any = {
+    const updateData = {
       ...updates,
       updatedAt: Timestamp.now(),
     };
     
     // Convert media dates to Firestore timestamps if present
     if (updates.media) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       updateData.media = updates.media.map((item: any) => ({
         ...item,
         createdAt: item.createdAt instanceof Date ? Timestamp.fromDate(item.createdAt) : item.createdAt
@@ -295,9 +297,9 @@ export const getPostsByTag = async (tag: string): Promise<BlogPost[]> => {
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate(),
         // Ensure media is properly formatted
-        media: data.media ? data.media.map((item: any) => ({
+        media: data.media ? data.media.map((item: Record<string, unknown>) => ({
           ...item,
-          createdAt: item.createdAt?.toDate ? item.createdAt.toDate() : item.createdAt
+          createdAt: (item.createdAt as { toDate?: () => Date })?.toDate ? (item.createdAt as { toDate: () => Date }).toDate() : item.createdAt
         })) : []
       } as BlogPost;
       

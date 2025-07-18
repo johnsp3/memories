@@ -45,7 +45,7 @@ export function CommentsSection({ postId, className }: CommentsSectionProps) {
 
   useEffect(() => {
     loadComments();
-  }, [postId]);
+  }, [postId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Add new comment
   const handleAddComment = async () => {

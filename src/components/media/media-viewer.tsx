@@ -2,12 +2,11 @@
 
 // Media viewer component for popup display of images and videos
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Play, Pause, Volume2, VolumeX, Maximize2 } from 'lucide-react';
-import { Modal, ModalContent, ModalOverlay, ModalTitle } from '@/components/ui/modal';
+import { motion } from 'framer-motion';
+import { X, Download, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Modal, ModalContent, ModalTitle } from '@/components/ui/modal';
 import { MediaItem } from '@/types/blog';
 import { formatFileSize } from '@/lib/utils';
-import { cn } from '@/lib/utils';
 
 interface MediaViewerProps {
   media: MediaItem | null;
@@ -68,7 +67,7 @@ export function MediaViewer({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, onNext, onPrevious, showNavigation, media, videoElement]);
+  }, [isOpen, onClose, onNext, onPrevious, showNavigation, media, videoElement]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const togglePlayPause = () => {
     if (!videoElement) return;

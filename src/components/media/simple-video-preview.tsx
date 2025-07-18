@@ -10,7 +10,7 @@ interface SimpleVideoPreviewProps {
   onClick?: () => void;
 }
 
-export function SimpleVideoPreview({ videoUrl, alt, className, onClick }: SimpleVideoPreviewProps) {
+export function SimpleVideoPreview({ alt, className, onClick }: SimpleVideoPreviewProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (

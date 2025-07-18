@@ -40,8 +40,7 @@ export function useFormState(options: UseFormStateOptions = {}) {
   };
 
   const executeAsync = async <T>(
-    asyncFn: () => Promise<T>,
-    successMessage?: string
+    asyncFn: () => Promise<T>
   ): Promise<T | null> => {
     try {
       setLoading(true);

@@ -186,7 +186,7 @@ export const cleanupTempFiles = async (userId: string): Promise<void> => {
         if (now - fileTime > oneDayMs) {
           await deleteFile(filePath);
         }
-      } catch (error) {
+      } catch {
         // File might have been deleted already, continue
         console.warn('Could not check file metadata:', filePath);
       }
@@ -229,7 +229,7 @@ export const validateFile = (file: File): { valid: boolean; error?: string } => 
 /**
  * Get optimized image URL for different sizes
  */
-export const getOptimizedImageUrl = (originalUrl: string, size: 'thumbnail' | 'medium' | 'large' = 'medium'): string => {
+export const getOptimizedImageUrl = (originalUrl: string): string => {
   // For now, return original URL
   // In production, you might want to use Firebase's image transformation
   // or implement your own image optimization service

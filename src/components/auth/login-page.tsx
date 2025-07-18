@@ -23,8 +23,8 @@ export function LoginPage() {
       if (!result.success) {
         setError(result.error || 'Failed to sign in');
       }
-    } catch (error: any) {
-      setError(error.message || 'An unexpected error occurred');
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }

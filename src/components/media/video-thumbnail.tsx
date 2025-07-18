@@ -19,7 +19,7 @@ export function VideoThumbnail({ videoUrl, alt, className, onClick }: VideoThumb
 
   useEffect(() => {
     generateThumbnail();
-  }, [videoUrl]);
+  }, [videoUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const generateThumbnail = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -44,7 +44,7 @@ export function VideoThumbnail({ videoUrl, alt, className, onClick }: VideoThumb
         // Seek to 1 second (or 10% of duration, whichever is smaller)
         const seekTime = Math.min(1, video.duration * 0.1);
         video.currentTime = seekTime;
-      } catch (error) {
+      } catch {
         clearTimeout(timeout);
         setIsLoading(false);
       }
@@ -64,7 +64,7 @@ export function VideoThumbnail({ videoUrl, alt, className, onClick }: VideoThumb
           }
           setIsLoading(false);
         }, 'image/jpeg', 0.8);
-      } catch (error) {
+      } catch {
         clearTimeout(timeout);
         setIsLoading(false);
       }

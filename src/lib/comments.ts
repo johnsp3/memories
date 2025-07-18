@@ -8,10 +8,8 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   Timestamp,
-  writeBatch,
-  getDoc
+  writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Comment, Rating } from '@/types/blog';

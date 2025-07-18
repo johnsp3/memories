@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Blog post list component with search, filtering, and media preview using React Query
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,7 +54,8 @@ export function PostList({ onEditPost, onCreatePost, refreshKey }: PostListProps
   const { invalidatePosts } = useUpdatePostsCache();
 
   // Flatten the infinite query data into a single array
-  const posts = infiniteData?.pages.flatMap(page => page.posts) || [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const posts = infiniteData?.pages.flatMap((page: any) => page.posts) || [];
 
   // Debounce search input
   useEffect(() => {

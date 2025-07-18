@@ -73,7 +73,7 @@ export function RatingSection({ post, onRatingUpdate, className }: RatingSection
 
   // Render star rating
   const renderStars = (rating: number, interactive: boolean = false) => {
-    const stars = [];
+    const stars: React.ReactElement[] = [];
     const displayRating = hoveredRating !== null && interactive ? hoveredRating : rating;
 
     for (let i = 1; i <= 5; i++) {

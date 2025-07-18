@@ -2,7 +2,7 @@
 
 // Media upload component with drag and drop support
 import { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { useDropzone, FileRejection } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, AlertCircle } from 'lucide-react';
 import { validateFile } from '@/lib/storage';
@@ -22,7 +22,7 @@ export function MediaUpload({ onFilesSelected, maxFiles = 10, className }: Media
   const [selectedFiles, setSelectedFiles] = useState<FileWithPreview[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
 
-  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
     setErrors([]);
     const newErrors: string[] = [];
 

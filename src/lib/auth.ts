@@ -33,11 +33,11 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; error?: st
     }
     
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Sign-in error:", error);
     return {
       success: false,
-      error: error.message || "Failed to sign in with Google"
+      error: error instanceof Error ? error.message : "Failed to sign in with Google"
     };
   }
 };
