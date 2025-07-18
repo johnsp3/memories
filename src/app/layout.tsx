@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   keywords: ["blog", "personal", "memories", "photos", "videos", "4K", "8K"],
   authors: [{ name: "Memories Blog" }],
   robots: "noindex, nofollow", // Private blog
+  manifest: "/manifest.json",
 };
 
 export const viewport = {
