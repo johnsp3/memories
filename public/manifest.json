@@ -1,7 +1,7 @@
 {
   "name": "Memories - Personal Blog",
   "short_name": "Memories",
-  "description": "Your beautiful personal blog with high-quality media support",
+  "description": "Your beautiful personal blog with high-quality media support and PWA features",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
