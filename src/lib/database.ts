@@ -166,7 +166,6 @@ export const getPost = async (postId: string): Promise<BlogPost | null> => {
 /**
  * Update a blog post
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const updatePost = async (postId: string, updates: Partial<BlogPostInput & { media?: any[]; published?: boolean }>): Promise<void> => {
   try {
     
@@ -178,7 +177,6 @@ export const updatePost = async (postId: string, updates: Partial<BlogPostInput 
     
     // Convert media dates to Firestore timestamps if present
     if (updates.media) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       updateData.media = updates.media.map((item: any) => ({
         ...item,
         createdAt: item.createdAt instanceof Date ? Timestamp.fromDate(item.createdAt) : item.createdAt

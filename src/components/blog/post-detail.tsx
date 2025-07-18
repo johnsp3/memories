@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { Calendar, Eye, Tag, ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Eye, Tag, ArrowLeft, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MediaViewer } from '@/components/media/media-viewer';
 import { VideoThumbnail } from '@/components/media/video-thumbnail';
@@ -22,9 +22,25 @@ interface PostDetailProps {
   onClose: () => void;
   onEdit: (post: BlogPost) => void;
   onDelete: (postId: string) => void;
+  onNavigate?: (direction: 'next' | 'prev') => void;
+  currentPostIndex?: number;
+  totalPosts?: number;
+  hasNext?: boolean;
+  hasPrevious?: boolean;
 }
 
-export function PostDetail({ postId, isOpen, onClose, onEdit, onDelete }: PostDetailProps) {
+export function PostDetail({ 
+  postId, 
+  isOpen, 
+  onClose, 
+  onEdit, 
+  onDelete, 
+  onNavigate,
+  currentPostIndex = 0,
+  totalPosts = 0,
+  hasNext = false,
+  hasPrevious = false
+}: PostDetailProps) {
   const { user } = useAuthStore();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +48,10 @@ export function PostDetail({ postId, isOpen, onClose, onEdit, onDelete }: PostDe
   const [viewerIndex, setViewerIndex] = useState(0);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [viewCountIncremented, setViewCountIncremented] = useState(false);
+  
+  // Touch gesture handling for mobile
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
 
   // Load post details
   useEffect(() => {
@@ -70,6 +90,73 @@ export function PostDetail({ postId, isOpen, onClose, onEdit, onDelete }: PostDe
   useEffect(() => {
     setViewCountIncremented(false);
   }, [postId]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isOpen || !onNavigate) return;
+      
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault();
+          if (hasPrevious) onNavigate('prev');
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          if (hasNext) onNavigate('next');
+          break;
+        case 'Escape':
+          event.preventDefault();
+          onClose();
+          break;
+      }
+    };
+
+         if (isOpen) {
+       document.addEventListener('keydown', handleKeyDown);
+       return () => document.removeEventListener('keydown', handleKeyDown);
+     }
+   }, [isOpen, onNavigate, hasNext, hasPrevious, onClose]);
+
+   // Touch gesture handlers
+   const handleTouchStart = (e: React.TouchEvent) => {
+     setTouchEnd(null);
+     setTouchStart({
+       x: e.targetTouches[0].clientX,
+       y: e.targetTouches[0].clientY
+     });
+   };
+
+   const handleTouchMove = (e: React.TouchEvent) => {
+     setTouchEnd({
+       x: e.targetTouches[0].clientX,
+       y: e.targetTouches[0].clientY
+     });
+   };
+
+   const handleTouchEnd = () => {
+     if (!touchStart || !touchEnd || !onNavigate) return;
+     
+     const deltaX = touchStart.x - touchEnd.x;
+     const deltaY = touchStart.y - touchEnd.y;
+     const minSwipeDistance = 50;
+     
+     // Horizontal swipe for navigation
+     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+       if (deltaX > 0 && hasNext) {
+         // Swipe left - next post
+         onNavigate('next');
+       } else if (deltaX < 0 && hasPrevious) {
+         // Swipe right - previous post
+         onNavigate('prev');
+       }
+     }
+     
+     // Vertical swipe down to close (only on mobile)
+     if (deltaY < -minSwipeDistance && Math.abs(deltaY) > Math.abs(deltaX)) {
+       onClose();
+     }
+   };
 
   const handleEdit = () => {
     if (post) {
@@ -121,10 +208,55 @@ export function PostDetail({ postId, isOpen, onClose, onEdit, onDelete }: PostDe
   return (
     <>
       <Modal open={isOpen} onOpenChange={onClose}>
-        <ModalContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <ModalContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 relative sm:rounded-3xl 
+                                     sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%]
+                                     max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:top-16 max-sm:left-0 max-sm:right-0 
+                                     max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-t-3xl max-sm:rounded-b-none 
+                                     max-sm:data-[state=open]:slide-in-from-bottom max-sm:data-[state=closed]:slide-out-to-bottom">
           <ModalTitle className="sr-only">
             {post ? post.title : 'Post Details'}
           </ModalTitle>
+          
+          {/* Navigation Controls */}
+          {onNavigate && totalPosts > 1 && (
+            <>
+              {/* Previous Button */}
+              {hasPrevious && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-md border-white/20 shadow-lg hover:bg-white hover:scale-105 transition-all duration-200 max-sm:left-2 max-sm:w-10 max-sm:h-10"
+                  onClick={() => onNavigate('prev')}
+                >
+                  <ChevronLeft className="w-5 h-5 max-sm:w-4 max-sm:h-4" />
+                </Button>
+              )}
+              
+              {/* Next Button */}
+              {hasNext && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-md border-white/20 shadow-lg hover:bg-white hover:scale-105 transition-all duration-200 max-sm:right-2 max-sm:w-10 max-sm:h-10"
+                  onClick={() => onNavigate('next')}
+                >
+                  <ChevronRight className="w-5 h-5 max-sm:w-4 max-sm:h-4" />
+                </Button>
+              )}
+              
+              {/* Mobile Handle */}
+              <div className="sm:hidden absolute top-2 left-1/2 -translate-x-1/2 z-20">
+                <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+              </div>
+              
+              {/* Progress Indicator */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full max-sm:top-6">
+                <span className="text-white text-sm font-medium max-sm:text-xs">
+                  {currentPostIndex + 1} of {totalPosts}
+                </span>
+              </div>
+            </>
+          )}
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="flex flex-col items-center space-y-4">
@@ -138,7 +270,12 @@ export function PostDetail({ postId, isOpen, onClose, onEdit, onDelete }: PostDe
               <p className="text-gray-600">The post you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div 
+              className="space-y-6"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               {/* Header */}
               <div className="sticky top-0 bg-white/95 backdrop-blur-xl border-b border-gray-200/50 p-6 z-10">
                 <div className="flex items-center justify-between">
@@ -179,8 +316,11 @@ export function PostDetail({ postId, isOpen, onClose, onEdit, onDelete }: PostDe
                 {/* Title and Meta */}
                 <div className="space-y-4">
                   <motion.h1
+                    key={post.id} // Re-animate when post changes
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                     className="text-3xl md:text-4xl font-bold text-gray-900"
                   >
                     {post.title}
@@ -225,9 +365,11 @@ export function PostDetail({ postId, isOpen, onClose, onEdit, onDelete }: PostDe
                 {/* Media Gallery */}
                 {post.media && post.media.length > 0 && (
                   <motion.div
+                    key={`media-${post.id}`} // Re-animate when post changes
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeOut", delay: 0.05 }}
                     className="space-y-4"
                   >
                     <h3 className="text-lg font-semibold text-gray-900">
@@ -236,8 +378,16 @@ export function PostDetail({ postId, isOpen, onClose, onEdit, onDelete }: PostDe
                     
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {post.media.map((media, index) => (
-                        <div
+                        <motion.div
                           key={media.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          whileHover={{ 
+                            scale: 1.03,
+                            transition: { duration: 0.2 }
+                          }}
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ delay: index * 0.05 }}
                           className="relative bg-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 group"
                           onClick={() => openMediaViewer(media, index)}
                         >
@@ -259,17 +409,19 @@ export function PostDetail({ postId, isOpen, onClose, onEdit, onDelete }: PostDe
                               />
                             )}
                           </div>
-                        </div>
-                      ))}
+                                                  </motion.div>
+                        ))}
                     </div>
                   </motion.div>
                 )}
 
                 {/* Content */}
                 <motion.div
+                  key={`content-${post.id}`} // Re-animate when post changes
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
                   className="prose prose-lg max-w-none"
                 >
                   <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-lg">

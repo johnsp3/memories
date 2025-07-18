@@ -1,9 +1,8 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // Blog post list component with search, filtering, and media preview using React Query
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Search, Eye, Star, MessageCircle, Calendar, Tag, Edit, Trash2, Image as ImageIcon, Video, Plus } from 'lucide-react';
@@ -26,6 +25,8 @@ interface PostListProps {
 
 export function PostList({ onEditPost, onCreatePost, refreshKey }: PostListProps) {
   const { user } = useAuthStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState(''); // Immediate input value
   const [searchQuery, setSearchQuery] = useState(''); // Debounced search value
   const [selectedTag, setSelectedTag] = useState<string>('');
@@ -34,6 +35,7 @@ export function PostList({ onEditPost, onCreatePost, refreshKey }: PostListProps
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [viewingPostId, setViewingPostId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [currentPostIndex, setCurrentPostIndex] = useState<number>(0);
 
   
   // For search/tag filtering (fallback to old method)
@@ -54,8 +56,10 @@ export function PostList({ onEditPost, onCreatePost, refreshKey }: PostListProps
   const { invalidatePosts } = useUpdatePostsCache();
 
   // Flatten the infinite query data into a single array
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const posts = infiniteData?.pages.flatMap((page: any) => page.posts) || [];
+  const posts = useMemo(() => 
+    infiniteData?.pages.flatMap((page: { posts: BlogPost[] }) => page.posts) || [], 
+    [infiniteData]
+  );
 
   // Debounce search input
   useEffect(() => {
@@ -112,6 +116,30 @@ export function PostList({ onEditPost, onCreatePost, refreshKey }: PostListProps
     }
   }, [sortBy, refetchPosts, searchQuery, selectedTag]);
 
+  // Handle URL state for post viewing
+  useEffect(() => {
+    const postIdFromUrl = searchParams.get('post');
+    if (postIdFromUrl && posts.length > 0 && !isDetailOpen) {
+      const postIndex = posts.findIndex(p => p.id === postIdFromUrl);
+      if (postIndex !== -1) {
+        setCurrentPostIndex(postIndex);
+        setViewingPostId(postIdFromUrl);
+        setIsDetailOpen(true);
+      }
+    }
+  }, [searchParams, posts, isDetailOpen]);
+
+  // Update URL when post is viewed
+  const updateURL = (postId: string | null) => {
+    const url = new URL(window.location.href);
+    if (postId) {
+      url.searchParams.set('post', postId);
+    } else {
+      url.searchParams.delete('post');
+    }
+    router.replace(url.pathname + url.search, { scroll: false });
+  };
+
   const handleDeletePost = async (postId: string) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
       try {
@@ -136,8 +164,25 @@ export function PostList({ onEditPost, onCreatePost, refreshKey }: PostListProps
   };
 
   const handleViewPost = (post: BlogPost) => {
+    const postIndex = displayPosts.findIndex(p => p.id === post.id);
+    setCurrentPostIndex(postIndex);
     setViewingPostId(post.id);
     setIsDetailOpen(true);
+    updateURL(post.id);
+  };
+
+  const handleNavigatePost = (direction: 'next' | 'prev') => {
+    let newIndex = currentPostIndex;
+    if (direction === 'next') {
+      newIndex = (currentPostIndex + 1) % displayPosts.length;
+    } else {
+      newIndex = currentPostIndex === 0 ? displayPosts.length - 1 : currentPostIndex - 1;
+    }
+    
+    const newPostId = displayPosts[newIndex].id;
+    setCurrentPostIndex(newIndex);
+    setViewingPostId(newPostId);
+    updateURL(newPostId);
   };
 
   const handleViewMedia = (media: MediaItem) => {
@@ -267,7 +312,12 @@ export function PostList({ onEditPost, onCreatePost, refreshKey }: PostListProps
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-200 overflow-hidden group"
+                    whileHover={{ 
+                      scale: 1.02,
+                      transition: { duration: 0.2, ease: "easeOut" }
+                    }}
+                    className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-200/50 transition-all duration-300 ease-out overflow-hidden group cursor-pointer"
+                    onClick={() => handleViewPost(post)}
                   >
                     {/* Media Preview */}
                     {post.media && post.media.length > 0 && (
@@ -469,8 +519,7 @@ export function PostList({ onEditPost, onCreatePost, refreshKey }: PostListProps
 
                     <div className="p-6">
                       {/* Title */}
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
-                          onClick={() => handleViewPost(post)}>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                         {post.title}
                       </h3>
 
@@ -597,9 +646,15 @@ export function PostList({ onEditPost, onCreatePost, refreshKey }: PostListProps
         onClose={() => {
           setIsDetailOpen(false);
           setViewingPostId(null);
+          updateURL(null);
         }}
         onEdit={onEditPost}
         onDelete={handlePostDeleted}
+        onNavigate={handleNavigatePost}
+        currentPostIndex={currentPostIndex}
+        totalPosts={displayPosts.length}
+        hasNext={currentPostIndex < displayPosts.length - 1}
+        hasPrevious={currentPostIndex > 0}
       />
     </>
   );
