@@ -18,7 +18,7 @@ export function useInfinitePosts(options: {
 } = {}) {
   return useInfiniteQuery({
     queryKey: postsKeys.list(options),
-    queryFn: ({ pageParam }) => getPosts({
+    queryFn: ({ pageParam }: { pageParam: unknown }) => getPosts({
       ...options,
       startAfter: pageParam,
       limit: options.limit || 12,
